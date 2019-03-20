@@ -100,7 +100,7 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
                     y_new[m][:] += dy
 
                     # check for convergence
-                    err = np.linalg.norm(dy)/max(abs(y_new[m]) + SMALL)
+                    err = np.linalg.norm(dy/(abs(y_new[m]) + SMALL))
                     niter += 1
 
                 total_be_solves += niter
