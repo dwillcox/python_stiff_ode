@@ -71,13 +71,34 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
             for m in range(1, sdc_nodes):
 
                 # define C = -R(y_old) + I/dt_m
+                C = -r_old[m][:] + (1/dt_m) * int_simps(m, dt_m, r_old[0], r_old[1], r_old[2])
+
+                # initial guess for time node m is m-1's solution
+                y_new[m][:] = y_new[m-1][:]
 
                 # solve the nonlinear system for the updated y
+                err = 1.e30
+                niter = 0
+                while err > tol and niter < max_iter:
 
-                # store y_new[m]
+                    # construct the Jacobian
+                    J = np.eye(neq) - dt_m * jac(time, y_new[m])
+
+                    # construct f for our guess
+                    f = y_new[m][:] - y_new[m-1][:] - dt_m * rhs(time, y_new[m]) - dt_m * C
+
+                    # solve the linear system J dy = - f
+                    dy = np.linalg.solve(J, -f)
+
+                    # correct our guess
+                    y_new[m][:] += dy
+
+                    # check for convergence
+                    err = np.linalg.norm(dy)/max(abs(y_new[m]) + SMALL)
+                    niter += 1
 
             # save the solution as the old solution for iteration
-            for m in range(1, sdc_iters):
+            for m in range(1, sdc_nodes):
                 y_old[m][:] = y_new[m][:]
 
         if time + dt > tmax:
@@ -89,3 +110,14 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
         y_old[0][:] = y_new[sdc_nodes-1][:]
 
     return y_new[sdc_nodes-1][:]
+
+
+def int_simps(m_end, dt_m, r0, r1, r2):
+
+    if m_end == 1:
+        # integral from m = 0 to m = 1
+        return dt_m/12.0 * (5*r0 + 8*r1 - r2)
+    else:
+        # integral from m = 1 to m = 2
+        return dt_m/12.0 * (-r0 + 8*r1 + 5*r2)
+
