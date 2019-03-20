@@ -23,10 +23,12 @@ def doit():
 
     ts = [time]
 
+    total_be_solves = 0
+
     for tmax in tends:
 
-        y_new = be.backwards_euler(neq, time, tmax, tmax/10,
-                                   y_old, rhs, jac)
+        y_new, n_iters = be.backwards_euler(neq, time, tmax, tmax/10,
+                                            y_old, rhs, jac)
 
         time = tmax
         ts.append(time)
@@ -34,6 +36,8 @@ def doit():
             ys[n].append(y)
 
         y_old[:] = y_new[:]
+
+        total_be_solves += n_iters
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -43,7 +47,9 @@ def doit():
 
     ax.set_xscale("log")
     ax.set_yscale("log")
-    fig.savefig("test.png")
+    fig.savefig("test_be.png")
+
+    print("Total no. BE solves: {}".format(total_be_solves))
 
 if __name__ == "__main__":
     doit()

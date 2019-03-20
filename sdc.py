@@ -52,6 +52,8 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
 
     dt_m = dt/(sdc_nodes-1)
 
+    total_be_solves = 0
+
     while time < tmax:
 
         # initially, we don't have the old solution at the m > 0 time
@@ -97,6 +99,8 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
                     err = np.linalg.norm(dy)/max(abs(y_new[m]) + SMALL)
                     niter += 1
 
+                total_be_solves += niter
+
             # save the solution as the old solution for iteration
             for m in range(1, sdc_nodes):
                 y_old[m][:] = y_new[m][:]
@@ -109,7 +113,7 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
         # set the starting point for the next timestep
         y_old[0][:] = y_new[sdc_nodes-1][:]
 
-    return y_new[sdc_nodes-1][:]
+    return y_new[sdc_nodes-1][:], total_be_solves
 
 
 def int_simps(m_end, dt_m, r0, r1, r2):
@@ -120,4 +124,3 @@ def int_simps(m_end, dt_m, r0, r1, r2):
     else:
         # integral from m = 1 to m = 2
         return dt_m/12.0 * (-r0 + 8*r1 + 5*r2)
-

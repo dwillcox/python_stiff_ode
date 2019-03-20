@@ -24,6 +24,8 @@ def backwards_euler(neq, t, tmax, dt_init, y_init, rhs, jac,
 
     y_new = np.zeros(neq)
 
+    total_be_solves = 0
+
     while time < tmax:
 
         converged = False
@@ -52,10 +54,12 @@ def backwards_euler(neq, t, tmax, dt_init, y_init, rhs, jac,
             err = np.linalg.norm(dy)/max(abs(y_new) + SMALL)
             niter += 1
 
+        total_be_solves += niter
+
         if time + dt > tmax:
             dt = tmax - time
 
         y_n[:] = y_new[:]
         time += dt
 
-    return y_n
+    return y_n, total_be_solves
