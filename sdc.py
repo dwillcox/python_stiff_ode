@@ -39,7 +39,7 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
         y_old.append(np.zeros(neq))
         y_new.append(np.zeros(neq))
 
-    # set the initial conditions
+    # set the initial conditions at m=0
     y_old[0][:] = y_init[:]
 
     # storage for the rhs at time nodes
@@ -69,7 +69,7 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
         # SDC iterations
         for kiter in range(4):
 
-            # node iterations
+            # node iterations, integrate from m-1 to m
             for m in range(1, sdc_nodes):
 
                 # define C = -R(y_old) + I/dt_m
@@ -108,6 +108,10 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
             # save the solution as the old solution for iteration
             for m in range(1, sdc_nodes):
                 y_old[m][:] = y_new[m][:]
+
+            # recompute r_old for the next iteration
+            for m in range(1, sdc_nodes):
+                r_old[m][:] = rhs(time, y_old[m])
 
         time += dt
 
