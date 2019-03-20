@@ -52,6 +52,8 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
 
     dt_m = dt/(sdc_nodes-1)
 
+    total_be_solves = 0
+
     while time < tmax:
 
         # initially, we don't have the old solution at the m > 0 time
@@ -73,8 +75,12 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
                 # define C = -R(y_old) + I/dt_m
                 C = -r_old[m][:] + (1/dt_m) * int_simps(m, dt_m, r_old[0], r_old[1], r_old[2])
 
-                # initial guess for time node m is m-1's solution
-                y_new[m][:] = y_new[m-1][:]
+                if kiter > 0:
+                    # initial guess for time node m is m's solution in the previous iteration
+                    y_new[m][:] = y_old[m][:]
+                else:
+                    # initial guess for time node m is m-1's solution
+                    y_new[m][:] = y_new[m-1][:]
 
                 # solve the nonlinear system for the updated y
                 err = 1.e30
@@ -97,6 +103,8 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
                     err = np.linalg.norm(dy)/max(abs(y_new[m]) + SMALL)
                     niter += 1
 
+                total_be_solves += niter
+
             # save the solution as the old solution for iteration
             for m in range(1, sdc_nodes):
                 y_old[m][:] = y_new[m][:]
@@ -109,7 +117,7 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
         # set the starting point for the next timestep
         y_old[0][:] = y_new[sdc_nodes-1][:]
 
-    return y_new[sdc_nodes-1][:]
+    return y_new[sdc_nodes-1][:], total_be_solves
 
 
 def int_simps(m_end, dt_m, r0, r1, r2):
@@ -120,4 +128,3 @@ def int_simps(m_end, dt_m, r0, r1, r2):
     else:
         # integral from m = 1 to m = 2
         return dt_m/12.0 * (-r0 + 8*r1 + 5*r2)
-
