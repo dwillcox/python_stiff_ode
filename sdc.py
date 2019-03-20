@@ -75,8 +75,12 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
                 # define C = -R(y_old) + I/dt_m
                 C = -r_old[m][:] + (1/dt_m) * int_simps(m, dt_m, r_old[0], r_old[1], r_old[2])
 
-                # initial guess for time node m is m-1's solution
-                y_new[m][:] = y_new[m-1][:]
+                if kiter > 0:
+                    # initial guess for time node m is m's solution in the previous iteration
+                    y_new[m][:] = y_old[m][:]
+                else:
+                    # initial guess for time node m is m-1's solution
+                    y_new[m][:] = y_new[m-1][:]
 
                 # solve the nonlinear system for the updated y
                 err = 1.e30
