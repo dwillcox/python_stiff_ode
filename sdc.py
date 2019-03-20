@@ -50,11 +50,11 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
     time = t
     dt = dt_init
 
-    dt_m = dt/(sdc_nodes-1)
-
     total_be_solves = 0
 
     while time < tmax:
+
+        dt_m = dt/(sdc_nodes-1)
 
         # initially, we don't have the old solution at the m > 0 time
         # nodes, so just set it to m = 0
@@ -100,7 +100,7 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
                     y_new[m][:] += dy
 
                     # check for convergence
-                    err = np.linalg.norm(dy/(abs(y_new[m]) + SMALL))
+                    err = max(abs((dy/(y_new[m]) + SMALL)))
                     niter += 1
 
                 total_be_solves += niter
@@ -109,10 +109,10 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
             for m in range(1, sdc_nodes):
                 y_old[m][:] = y_new[m][:]
 
+        time += dt
+
         if time + dt > tmax:
             dt = tmax - time
-
-        time += dt
 
         # set the starting point for the next timestep
         y_old[0][:] = y_new[sdc_nodes-1][:]
