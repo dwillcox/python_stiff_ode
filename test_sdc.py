@@ -12,7 +12,8 @@ def doit():
 
     # like the vode driver, we will do the integration in a bunch of
     # pieces, increasing the stopping time by 10x each run
-    tends = np.logspace(-6, 8, 15)
+    #tends = np.logspace(-6, 7, 15)
+    tends = [1.0e8]
 
     time = 0.0
     y_old = y_init.copy()

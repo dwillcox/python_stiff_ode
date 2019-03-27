@@ -66,15 +66,13 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
         for m in range(1, sdc_nodes):
             r_old[m][:] = r_old[0][:]
 
+        print("Starting SDC iterations at time {}".format(time))
         # SDC iterations
         for kiter in range(4):
 
+            print("starting nodes for SDC iteration {}".format(kiter))
             # node iterations, integrate from m-1 to m
             for m in range(1, sdc_nodes):
-
-                # define C = -R(y_old) + I/dt_m
-                C = -r_old[m][:] + (1/dt_m) * int_simps(m, dt_m, r_old[0], r_old[1], r_old[2])
-
                 if kiter > 0:
                     # initial guess for time node m is m's solution in the previous iteration
                     y_new[m][:] = y_old[m][:]
@@ -85,25 +83,58 @@ def sdc4(neq, t, tmax, dt_init, y_init, rhs, jac,
                 # solve the nonlinear system for the updated y
                 err = 1.e30
                 niter = 0
+                print("----------------------------")                
+                print("starting newton for node {}\n".format(m))
                 while err > tol and niter < max_iter:
+
+                    # define C = -R(y_old) + I/dt_m
+                    C = -r_old[m][:]
+                    Im = int_simps(m, dt_m, r_old[0], r_old[1], r_old[2])
+
+                    print("dydt_old is {}".format(-C))
+                    print("Im is {}".format(Im))
+                    print("dt_m is {}".format(dt_m))
+                    
+                    C += (1/dt_m) * Im
 
                     # construct the Jacobian
                     J = np.eye(neq) - dt_m * jac(time, y_new[m])
 
                     # construct f for our guess
-                    f = y_new[m][:] - y_new[m-1][:] - dt_m * rhs(time, y_new[m]) - dt_m * C
+                    r = rhs(time, y_new[m])
+                    print("ynew_m is {}".format(y_new[m]))
+                    print("ynew_m1 is {}".format(y_new[m-1]))
+                    
+                    f = y_new[m-1][:] - y_new[m][:]
+                    print("f1: {}".format(f))
+                    f = f + dt_m * (r-r_old[m][:])
+                    print("f2: {}".format(f))
+                    f = f + Im
+                    print("f3: {}".format(f))
 
                     # solve the linear system J dy = - f
-                    dy = np.linalg.solve(J, -f)
+                    dy = np.linalg.solve(J, f)
 
                     # correct our guess
                     y_new[m][:] += dy
+
+                    print("delta is {}".format(dy))
+                    print("dydt is {}".format(r))
+                    print("f is {}".format(f))
+                    print("J is {}".format(J))
+                    print("ynew' is {}".format(y_new[m]))
 
                     # check for convergence
                     #err = max(abs((dy/(y_new[m]) + SMALL)))
                     err = np.linalg.norm(dy)/max(abs(y_new[m]) + SMALL)
 
+                    print("err is {}".format(err))
+                    print("----------------------------")
+
                     niter += 1
+
+                if (niter == max_iter):
+                    print('WARNING: HIT MAX NEWTON ITERATIONS')
 
                 total_be_solves += niter
 
